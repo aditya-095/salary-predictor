@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
+import os
 
 # --- Color and Style Tokens ---
 BG_GRAD = "linear-gradient(120deg,#212336 15%,#1a1e30 100%)"
@@ -20,7 +21,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Custom CSS for Sidebar and Predict Button ---
+# --- Custom CSS ---
 st.markdown(f"""
     <style>
     html, body, [class*="css"] {{
@@ -41,14 +42,12 @@ st.markdown(f"""
     .sidebar-title {{
         color: {ACCENT};
         font-size: 1.25em; font-weight: bold; margin-bottom: 6px;
-        letter-spacing: .5px;
     }}
     .sidebar-inst {{
         color: {SECOND_TXT};
         font-size: 1.07em;
         margin-bottom: 19px;
         line-height:1.7;
-        margin-top: 0.45em;
     }}
     .glass-card {{
         background: {GLASS};
@@ -88,7 +87,6 @@ st.markdown(f"""
         font-weight: 900 !important;
         box-shadow: 0 2px 18px #4fdbb478;
         transition: background 0.2s, color 0.25s, box-shadow 0.19s;
-        text-shadow: 0 1px 2px #2225;
         letter-spacing: .2px;
     }}
     .new-predict-btn > button:hover {{
@@ -110,7 +108,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Sidebar (Collapsible Dashboard) ---
+# --- Sidebar ---
 with st.sidebar:
     st.markdown("<div class='sidebar-title'>Dashboard: How to Use</div>", unsafe_allow_html=True)
     st.markdown(
@@ -126,27 +124,30 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-# --- Main Section ---
+# --- Load Models ---
+@st.cache_resource
+def load_models():
+    try:
+        base_path = os.path.dirname(__file__)
+        clf_model = joblib.load(os.path.join(base_path, "salary_classification_model.pkl"))
+        reg_model = joblib.load(os.path.join(base_path, "salary_regression_model.pkl"))
+        label_encoder = joblib.load(os.path.join(base_path, "label_encoder.pkl"))
+        column_info = joblib.load(os.path.join(base_path, "column_info.pkl"))
+        return clf_model, reg_model, label_encoder, column_info
+    except FileNotFoundError as e:
+        st.error(f"Model file not found: {e.filename}")
+        st.stop()
+
+clf_model, reg_model, label_encoder, column_info = load_models()
+
+# --- UI Input ---
 st.markdown("<div class='mainhead'>Employee Salary Predicting System</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtxt'>Instant AI salary insights for every workplace profile. Enter your data — estimate your income potential.</div><hr>", unsafe_allow_html=True)
 
-# --- Glass Card for Inputs (Grid layout) ---
 with st.container():
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.markdown("##### Profile Input")
     user_input = {}
-    @st.cache_resource
-    def load_models():
-        try:
-            clf_model = joblib.load("salary_classification_model.pkl")
-            reg_model = joblib.load("salary_regression_model.pkl")
-            label_encoder = joblib.load("label_encoder.pkl")
-            column_info = joblib.load("column_info.pkl")
-            return clf_model, reg_model, label_encoder, column_info
-        except FileNotFoundError:
-            st.error("Model files not found. Please run 'python train_model.py' first.")
-            st.stop()
-    clf_model, reg_model, label_encoder, column_info = load_models()
 
     ci = column_info['all_columns'] if 'all_columns' in column_info else []
     rows = [st.columns(4), st.columns(4), st.columns(4)]
@@ -162,28 +163,30 @@ with st.container():
             "White", "Black", "Asian-Pac-Islander", "Amer-Indian-Eskimo", "Other"])
     if 'native-country' in ci:
         user_input['native-country'] = rows[0][3].selectbox("Country", [
-            "United-States", "Mexico", "Philippines", "Germany", "Puerto-Rico", "Canada", "El-Salvador","India", "Cuba", "England", "China", "Other"])
+            "United-States", "Mexico", "Philippines", "Germany", "Puerto-Rico", "Canada", "El-Salvador", "India", "Cuba", "England", "China", "Other"])
 
     if 'workclass' in ci:
         user_input['workclass'] = rows[1][0].selectbox("Work Class", [
-            "Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov","Local-gov", "State-gov", "Without-pay", "Never-worked"])
+            "Private", "Self-emp-not-inc", "Self-emp-inc", "Federal-gov", "Local-gov", "State-gov", "Without-pay", "Never-worked"])
     if 'education' in ci:
         user_input['education'] = rows[1][1].selectbox("Education Level", [
-            "Bachelors", "HS-grad", "11th", "Masters", "9th", "Some-college",
-            "Assoc-acdm", "Assoc-voc", "7th-8th", "Doctorate", "Prof-school", "5th-6th", "10th","1st-4th","Preschool","12th"])
+            "Bachelors", "HS-grad", "11th", "Masters", "9th", "Some-college", "Assoc-acdm", "Assoc-voc", "7th-8th",
+            "Doctorate", "Prof-school", "5th-6th", "10th", "1st-4th", "Preschool", "12th"])
     if 'educational-num' in ci:
         user_input['educational-num'] = rows[1][2].slider("Education Years", 1, 16, 10)
     elif 'education-num' in ci:
         user_input['education-num'] = rows[1][2].slider("Education Years", 1, 16, 10)
     if 'occupation' in ci:
         user_input['occupation'] = rows[1][3].selectbox("Occupation", [
-            "Tech-support","Craft-repair","Other-service","Sales", "Exec-managerial","Prof-specialty", "Handlers-cleaners","Machine-op-inspct", "Adm-clerical","Farming-fishing","Transport-moving","Priv-house-serv", "Protective-serv", "Armed-Forces"])
+            "Tech-support", "Craft-repair", "Other-service", "Sales", "Exec-managerial", "Prof-specialty",
+            "Handlers-cleaners", "Machine-op-inspct", "Adm-clerical", "Farming-fishing", "Transport-moving",
+            "Priv-house-serv", "Protective-serv", "Armed-Forces"])
 
     if 'hours-per-week' in ci:
         user_input['hours-per-week'] = rows[2][0].slider("Hours/Week", 1, 100, 40)
     if 'marital-status' in ci:
         user_input['marital-status'] = rows[2][1].selectbox("Marital Status", [
-            "Never-married", "Married-civ-spouse", "Divorced", "Married-spouse-absent","Separated", "Married-AF-spouse", "Widowed"])
+            "Never-married", "Married-civ-spouse", "Divorced", "Married-spouse-absent", "Separated", "Married-AF-spouse", "Widowed"])
     if 'relationship' in ci:
         user_input['relationship'] = rows[2][2].selectbox("Relationship", [
             "Not-in-family", "Husband", "Wife", "Own-child", "Unmarried", "Other-relative"])
@@ -192,21 +195,18 @@ with st.container():
     if 'capital-loss' in ci:
         st.columns([1, 1, 1, 1])[0].number_input("Capital Loss", 0, 10000, 0, key="caploss")
         user_input['capital-loss'] = st.session_state.caploss
+
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Predict Button (large, gradient, styled, standalone) ---
+# --- Predict Button ---
 center2 = st.columns([5, 1.2, 5])
 with center2[1]:
     predict = st.container()
     with predict:
-        predicted = st.button("Predict Salary", key="predict-btn", use_container_width=True, help="Run prediction", args=None, kwargs=None, type="secondary", disabled=False)
+        predicted = st.button("Predict Salary", key="predict-btn", use_container_width=True)
     predict.markdown('<div style="margin-top:-2.4em"></div>', unsafe_allow_html=True)
-st.markdown('<br/>', unsafe_allow_html=True)
 
-# Attach CSS class to predict button for new style
-st.markdown("<style>.stButton button {{ box-shadow: none; }}</style>", unsafe_allow_html=True)
-
-# --- Results Card ---
+# --- Results ---
 if 'predicted' in locals() and predicted:
     st.markdown("<div class='result-card'>", unsafe_allow_html=True)
     st.markdown("#### Salary Results")
@@ -240,15 +240,15 @@ if 'predicted' in locals() and predicted:
             }).sort_values('Probability', ascending=False)
             st.dataframe(prob_df, hide_index=True, use_container_width=True)
         if "<=50K" in predicted_category:
-            st.warning("This profile is predicted in the lower income group. Estimate reflects model midrange.")
+            st.warning("This profile is predicted in the lower income group.")
         else:
-            st.success("This profile aligns with a higher earner group. Value is typical for similar cases.")
+            st.success("This profile aligns with a higher earner group.")
     except Exception as e:
         st.error(f"Prediction error: {str(e)}")
         st.error("Please check all fields and try again.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Footer (subtle, left-aligned) ---
+# --- Footer ---
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown(
     f"<div style='text-align:left;color:{SECOND_TXT};margin-top:8px;font-size:1.04em;'>"
@@ -256,3 +256,4 @@ st.markdown(
     "<br><span style='color:#8becc9;'>Results are predictive only.</span></div>",
     unsafe_allow_html=True
 )
+
