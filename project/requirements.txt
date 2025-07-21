@@ -1,0 +1,13 @@
+<<<<<<< HEAD
+streamlit
+scikit-learn
+pandas
+numpy
+joblib
+=======
+streamlit
+scikit-learn
+pandas
+numpy
+joblib
+>>>>>>> e90d1042f77d1592e1e68eafc1df06d6fb424f32
