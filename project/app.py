@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 import os
 
-# --- Color and Style Tokens ---
+
 BG_GRAD = "linear-gradient(120deg,#212336 15%,#1a1e30 100%)"
 SIDEBAR_GRAD = "linear-gradient(135deg,#191e32 85%,#303e5c 100%)"
 GLASS = "rgba(28, 33, 53, 0.95)"
@@ -21,7 +21,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Custom CSS ---
 st.markdown(f"""
     <style>
     html, body, [class*="css"] {{
@@ -108,7 +107,6 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Sidebar ---
 with st.sidebar:
     st.markdown("<div class='sidebar-title'>Dashboard: How to Use</div>", unsafe_allow_html=True)
     st.markdown(
@@ -124,7 +122,7 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-# --- Load Models ---
+
 @st.cache_resource
 def load_models():
     try:
@@ -140,7 +138,7 @@ def load_models():
 
 clf_model, reg_model, label_encoder, column_info = load_models()
 
-# --- UI Input ---
+
 st.markdown("<div class='mainhead'>Employee Salary Predicting System</div>", unsafe_allow_html=True)
 st.markdown("<div class='subtxt'>Instant AI salary insights for every workplace profile. Enter your data — estimate your income potential.</div><hr>", unsafe_allow_html=True)
 
@@ -198,7 +196,7 @@ with st.container():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Predict Button ---
+
 center2 = st.columns([5, 1.2, 5])
 with center2[1]:
     predict = st.container()
@@ -206,7 +204,7 @@ with center2[1]:
         predicted = st.button("Predict Salary", key="predict-btn", use_container_width=True)
     predict.markdown('<div style="margin-top:-2.4em"></div>', unsafe_allow_html=True)
 
-# --- Results ---
+
 if 'predicted' in locals() and predicted:
     st.markdown("<div class='result-card'>", unsafe_allow_html=True)
     st.markdown("#### Salary Results")
@@ -248,7 +246,7 @@ if 'predicted' in locals() and predicted:
         st.error("Please check all fields and try again.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Footer ---
+
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown(
     f"<div style='text-align:left;color:{SECOND_TXT};margin-top:8px;font-size:1.04em;'>"
